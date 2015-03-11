@@ -1,0 +1,372 @@
+﻿Version=2.52
+IconFile=
+NumberOfModules=1
+Module1=Options
+ModuleVisible1=1
+Package=b4a.example
+DoNotOverwriteManifest=False
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: http://www.basic4ppc.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="8"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~'End of default text.~\n~~\n~'<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="14"/>~\n~'The above line is the default for line 5.~\n~
+UserTypesHint=
+NumberOfFiles=2
+File1=cogito_main.bal
+File2=cogito_options.bal
+NumberOfLibraries=2
+Library1=audio
+Library2=core
+@EndOfDesignText@
+#Region  Project Attributes 
+	#ApplicationLabel: Cogito
+	#VersionCode: 1
+	#VersionName: 
+	'SupportedOrientations possible values: unspecified, landscape or portrait.
+	#SupportedOrientations: landscape
+	#CanInstallToExternalStorage: False
+#End Region
+
+#Region  Activity Attributes 
+	#FullScreen: True
+	#IncludeTitle: False
+#End Region
+
+Sub Process_Globals
+	'These global variables will be declared once when the application starts.
+	'These variables can be accessed from all modules.
+
+Dim ResetFlag As Boolean
+Dim AlternateControl As Boolean
+Dim RuleSet As Int
+
+Dim SoundEnabled As Boolean
+Dim SP As SoundPool
+Dim SoundCardClick As Int
+Dim SoundEndTurn As Int
+Dim SoundEndGame As Int
+Dim SoundNewGame As Int
+
+End Sub
+
+Sub Globals
+	'These global variables will be redeclared each time the activity is created.
+	'These variables can only be accessed from this module.
+
+Dim PlayerTurn As String
+Dim StartingTurn As String
+
+Dim CardsPlayedLastTurn As Int
+Dim CardsPlayedThisTurn As Int
+
+Dim LastBattle As Int
+
+Dim HeartBattleWins As Int
+Dim SpadeBattleWins As Int
+
+Dim HeartScore As Int
+Dim SpadeScore As Int
+
+Dim HeartCardValue(6) As Int
+Dim SpadeCardValue(6) As Int
+
+Dim HeartCardsPlayed As Int
+Dim SpadeCardsPlayed As Int
+
+Dim C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16 As ImageView
+Dim ImageCards() As ImageView
+
+Dim B1, B2, B3, B4, B5, B6 As Label
+Dim LabelBattle() As Label
+
+Dim PanelScoreBoard As Panel
+
+Dim LabelHeartScore As Label
+Dim LabelSpadeScore As Label
+
+Dim ButtonEndTurn As Button
+'Dim ButtonColor As ColorDrawable
+
+Dim GameOver As Boolean
+
+End Sub
+
+Sub Activity_Create(FirstTime As Boolean)
+If FirstTime Then 'If the game was started, not resumed.
+	SP.Initialize(3)
+	SoundCardClick = SP.Load(File.DirAssets, "click1.wav")
+	SoundEndTurn = SP.Load(File.DirAssets, "endturn.wav")
+	SoundEndGame = SP.Load(File.DirAssets, "endgame.wav")
+	SoundNewGame = SP.Load(File.DirAssets, "newgame.wav")
+	SoundEnabled = True
+	AlternateControl = True
+	RuleSet = 1
+	StartingTurn = "s"
+	Activity.AddMenuItem("Options", "Menu")
+	'Activity.AddMenuItem3("Options", "Menu", LoadBitmap(File.DirAssets, "hfacedown.bmp"), False) 'Load menu item with image.
+	Activity.AddMenuItem("Help", "Menu")
+	Activity.AddMenuItem("Exit", "Menu")
+End If
+
+Activity.LoadLayout("cogito_main")
+Activity.Color = Colors.RGB(1, 105, 43) 'Change background color.
+
+ImageCards = Array As ImageView(C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16)
+LabelBattle = Array As Label(B1, B2, B3, B4, B5, B6)
+
+For i = 1 To 5 'Add card imageviews and battle labels.
+	ImageCards(i).Initialize("ImageCard")
+	Activity.AddView(ImageCards(i), (10%x * i) + 16.25%x, 20%y, 7.29%x, 15%y)
+	ImageCards(i).Tag = i
+	ImageCards(i + 5).Initialize("ImageCard")
+	Activity.AddView(ImageCards(i + 5), (10%x * i) + 16.25%x, 45%y, 7.29%x, 15%y)
+	ImageCards(i + 5).Tag = i + 5
+	ImageCards(i + 10).Initialize("ImageCard")
+	Activity.AddView(ImageCards(i + 10), (10%x * i) + 16.25%x, 65%y, 7.29%x, 15%y)
+	ImageCards(i + 10).Tag = i + 10
+
+	LabelBattle(i).Initialize("LabelBattles")
+	Activity.AddView(LabelBattle(i), (10%x * i) + 16.25%x, 37.5%y, 7.29%x, 5%y)
+	LabelBattle(i).Gravity = Gravity.CENTER_HORIZONTAL
+	LabelBattle(i).TextSize = 10
+	LabelBattle(i).TextColor = Colors.White
+Next
+
+PanelScoreBoard.Initialize("") 'Add score panel and labels.
+Activity.AddView(PanelScoreBoard, 30%x, 0, 40%x, 12.5%y)
+PanelScoreBoard.Color = Colors.RGB(1, 65, 23)
+LabelHeartScore.Initialize("") 
+Activity.AddView(LabelHeartScore, 35%x, 3.75%y, 12.5%x, 5%y)
+LabelHeartScore.Text = "Hearts: " & HeartScore
+LabelHeartScore.TextSize = 10
+LabelHeartScore.TextColor = Colors.White
+LabelSpadeScore.Initialize("")
+Activity.AddView(LabelSpadeScore, 57%x, 3.75%y, 12.5%x, 5%y)
+LabelSpadeScore.Text = "Spades: " & SpadeScore
+LabelSpadeScore.TextSize = 10
+LabelSpadeScore.TextColor = Colors.White
+
+ButtonEndTurn.Initialize("ButtonEndTurn") 'Add the End Turn button.
+Activity.AddView(ButtonEndTurn, 40%x, 82.5%y, 20%x, 15%y)
+ButtonEndTurn.Text = "End Turn"
+'ButtonColor.Initialize(Colors.ARGB(200, 50, 50, 50), 1%x) 'Change the button's color and transparency.
+'ButtonEndTurn.Background = ButtonColor
+
+NewGame
+
+End Sub
+
+Sub ImageCard_Click
+'If GameOver = True Then Return 'If the game is over then don't do anything.
+
+Dim CardClicked As View
+CardClicked = Sender
+
+If CardClicked.Tag < 9 Then Return 'Check if the player clicked a playable card.
+
+If SoundEnabled Then SP.Play(SoundCardClick, 1, 1, 1, 0, 1) 'Play the sound effect.
+
+Select Case RuleSet 'Check which rules are being used.
+	Case 1 'Business Rules - Anything goes.
+	Case 2 'Thai Rules - The responding player must play the same number of cards as his opponent.
+		If PlayerTurn <> StartingTurn AND CardsPlayedThisTurn = CardsPlayedLastTurn AND CardsPlayedThisTurn > 0 Then 
+			Msgbox("You must play the same number of cards as your opponent.", "Thai Rules")
+			Return
+		End If
+	Case 3 'Casual Rules A - Each player may play only one card per turn.
+		If CardsPlayedThisTurn = 1 Then
+			Msgbox("You may only play one card per turn", "Casual Rules A")
+			Return
+		End If
+	Case 4 'Casual Rules B - Both players must play all five cards at once.
+End Select
+	
+ImageCards(CardClicked.Tag).Visible = False 'Play the clicked card and remove it from the player's hand.
+CardsPlayedThisTurn = CardsPlayedThisTurn + 1
+If PlayerTurn = "h" Then
+	HeartCardsPlayed = HeartCardsPlayed + 1
+	ImageCards(HeartCardsPlayed).Visible = True
+	ImageCards(HeartCardsPlayed).Bitmap = LoadBitmap(File.DirAssets, PlayerTurn & "facedown.bmp")
+	HeartCardValue(HeartCardsPlayed) = (CardClicked.Tag - 10)
+Else
+	SpadeCardsPlayed = SpadeCardsPlayed + 1
+	ImageCards(SpadeCardsPlayed + 5).Visible = True
+	ImageCards(SpadeCardsPlayed + 5).Bitmap = LoadBitmap(File.DirAssets, PlayerTurn & "facedown.bmp")
+	SpadeCardValue(SpadeCardsPlayed) = (CardClicked.Tag - 10)
+End If
+
+End Sub
+
+Sub ButtonEndTurn_Click
+If GameOver = True Then
+	NewGame
+	Return
+End If
+
+If SoundEnabled Then 'Play the sound effect.
+	If HeartCardValue(5) = 0 OR SpadeCardValue(5) = 0 Then SP.Play(SoundEndTurn, 1, 1, 1, 0, 1) 
+End If
+
+If CardsPlayedThisTurn = 0 Then 'Check if the player has played a card.
+	If PlayerTurn = "h" Then
+		If HeartCardValue(5) < 1 Then
+			Msgbox("You must play a card.", "Error")
+			Return
+		End If
+	Else
+		If PlayerTurn = "s" Then
+			If SpadeCardValue(5) < 1 Then
+				Msgbox("You must play a card.", "Error")
+				Return
+			End If
+		End If
+	End If
+End If
+
+Select Case RuleSet 'Check which rules are being used.
+	Case 1 'Business Rules - Anything goes.
+	Case 2 'Thai Rules - The responding player must play the same number of cards as his opponent.
+		If PlayerTurn <> StartingTurn AND CardsPlayedThisTurn < CardsPlayedLastTurn Then 
+			Msgbox("You must play the same number of cards as your opponent.", "Thai Rules")
+			Return
+		End If
+	Case 3 'Casual Rules A - Each player may play only one card per turn.
+	Case 4 'Casual Rules B - Both players must play all five cards at once.
+		If CardsPlayedThisTurn < 5 Then
+			Msgbox("You must play all five cards.", "Casual Rules B")
+			Return
+		End If
+End Select
+
+Battle
+
+CardsPlayedLastTurn = CardsPlayedThisTurn
+CardsPlayedThisTurn = 0
+
+If PlayerTurn = "h" Then 'Change the player's turn.
+	PlayerTurn = "s"
+Else
+	PlayerTurn = "h"
+End If
+
+For i = 1 To 5
+	ImageCards(i + 10).Bitmap = LoadBitmap(File.DirAssets, PlayerTurn & i & ".bmp") 'Reset the player's hand.
+	ImageCards(i + 10).Visible = True
+Next
+
+For i = 1 To 5
+	If PlayerTurn = "h" Then
+		If HeartCardValue(i) > 0 Then ImageCards(HeartCardValue(i) + 10).Visible = False
+	Else
+		If SpadeCardValue(i) > 0 Then ImageCards(SpadeCardValue(i) + 10).Visible = False
+	End If
+Next
+
+End Sub
+
+Sub Battle
+For i = (LastBattle + 1) To 5
+	If HeartCardValue(i) > 0 AND SpadeCardValue(i) > 0 Then 'If both players have played a card
+		If HeartCardValue(i) = 1 AND SpadeCardValue(i) = 5	Then 'If Hearts played a two on an ace
+			LabelBattle(i).Text = "Hearts"
+			HeartBattleWins = HeartBattleWins + 1
+		Else If SpadeCardValue(i) = 1 AND HeartCardValue(i) = 5	Then 'If Spades played a two on an ace
+			LabelBattle(i).Text = "Spades"
+			SpadeBattleWins = SpadeBattleWins + 1			
+		Else If HeartCardValue(i) > SpadeCardValue(i) Then 'If Hearts wins the battle.
+			LabelBattle(i).Text = "Hearts"
+			HeartBattleWins = HeartBattleWins + 1
+		Else If HeartCardValue(i) < SpadeCardValue(i) Then 'If Spades wins the battle.
+			LabelBattle(i).Text = "Spades"
+			SpadeBattleWins = SpadeBattleWins + 1
+		Else If HeartCardValue(i) = SpadeCardValue(i) Then 'If it's a tie
+			LabelBattle(i).Text = "Tie"
+		End If
+		ImageCards(i).Bitmap = LoadBitmap(File.DirAssets, "h" & HeartCardValue(i) & ".bmp")
+		ImageCards(i + 5).Bitmap = LoadBitmap(File.DirAssets, "s" & SpadeCardValue(i) & ".bmp")
+		LastBattle = LastBattle + 1 'Update the last battle flag.
+	End If
+Next
+
+If SpadeCardsPlayed = 5 AND HeartCardsPlayed = 5 Then EndGame 'Check if all of the cards have been played.
+End Sub
+
+Sub NewGame
+If SoundEnabled Then SP.Play(SoundNewGame, 1, 1, 1, 0, 1) 'Play the sound effect.
+
+GameOver = False 'Set the current turn to correct player and reset turn data.
+ButtonEndTurn.Text = "End Turn"
+
+If AlternateControl Then 'If indicated, change the starting player's turn.
+	If StartingTurn = "h" Then
+		StartingTurn = "s"
+	Else
+		StartingTurn = "h"
+	End If
+End If
+
+PlayerTurn = StartingTurn
+CardsPlayedThisTurn = 0
+CardsPlayedLastTurn = 0
+HeartBattleWins = 0 
+SpadeBattleWins = 0
+HeartCardsPlayed = 0
+SpadeCardsPlayed = 0
+LastBattle = 0
+
+For i = 1 To 5 'Reset the cards.
+	ImageCards(i).Bitmap = LoadBitmap(File.DirAssets, "hfacedown.bmp")
+	ImageCards(i + 5).Bitmap = LoadBitmap(File.DirAssets, "sfacedown.bmp")
+	ImageCards(i + 10).Bitmap = LoadBitmap(File.DirAssets, PlayerTurn & i & ".bmp")
+	ImageCards(i).Visible = False
+	ImageCards(i + 5).Visible = False
+	ImageCards(i + 10).Visible = True
+	LabelBattle(i).Text = ""
+	HeartCardValue(i) = 0
+	SpadeCardValue(i) = 0
+Next
+
+End Sub
+
+Sub EndGame
+If SoundEnabled Then SP.Play(SoundEndGame, 1, 1, 1, 0, 1) 'Play the sound effect.
+
+GameOver = True
+ButtonEndTurn.Text = "Play Again" 'Change the text of the button.
+
+If HeartBattleWins > SpadeBattleWins Then 'Check which player won the game.
+	Msgbox("Hearts Win!", "Game Over")
+	HeartScore = HeartScore + 1
+End If
+If HeartBattleWins < SpadeBattleWins Then
+	Msgbox("Spades Win!", "Game Over")
+	SpadeScore = SpadeScore + 1
+End If
+If HeartBattleWins = SpadeBattleWins Then
+	Msgbox("It's a tie.", "Game Over")
+End If
+
+LabelHeartScore.Text = "Player One: " & HeartScore 'Update the scoreboard.
+LabelSpadeScore.Text = "Player Two: " & SpadeScore
+
+End Sub
+
+Sub Menu_Click
+Select Sender
+	Case "Options"
+		StartActivity("Options")
+	Case "Help"
+		Msgbox("Cogito is a simple game to learn. Just try clicking stuff until you get it.", "Help")
+	Case "Exit"
+		Activity.Finish
+End Select
+End Sub
+
+Sub Activity_Resume
+If ResetFlag = True Then 'Check if the game should be reset.
+	If CardsPlayedThisTurn <> 0 OR CardsPlayedLastTurn <> 0 Then NewGame
+	ResetFlag = False
+End If
+End Sub
+
+Sub Activity_Pause (UserClosed As Boolean)
+
+End Sub
+
+
